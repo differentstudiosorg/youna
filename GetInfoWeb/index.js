@@ -115,6 +115,11 @@ exports.handler = function(event, context, callback) {
                     if (done.creator != undefined) {
                         response.tagline = done.creator.tag_line;
                         response.paypal_email = done.creator_details.paypal_email;
+                        response.images = done.creator.images;
+                        response.twitter_link = done.creator.twitter_link;
+                        response.facebook_link = done.creator.facebook_link;
+                        response.instagram_link = done.creator.instagram_link;
+                        response.youtube_link = done.creator.youtube_link;
                     }
                     return callback(null, response);
                 }

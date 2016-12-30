@@ -92,7 +92,7 @@ exports.handler = function(event, context, callback) {
             google_client_id = env_config.Item.google_client_id.S;
 
             var access_token = event.body.token;
-            var profile_url = event.body.profile_url;
+            var images = event.body.images;
 
             if (access_token === undefined || access_token === null || access_token === '') {
                 var error = new Error("Token is either null or undefined");
@@ -100,7 +100,7 @@ exports.handler = function(event, context, callback) {
             }
 
             async.waterfall([
-                async.apply(verifyAccessToken, access_token, profile_url),
+                async.apply(verifyAccessToken, access_token, images),
                 updateUser, 
                 updateCreator,
             ], function(err, done) {
@@ -123,13 +123,13 @@ exports.handler = function(event, context, callback) {
 
 }
 
-function verifyAccessToken(token, profile_url, callback) {
+function verifyAccessToken(token, images, callback) {
 
     var url = 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=' + token;
     request(url, function(error, response, body){
         if (!error && response.statusCode == 200) {
             var data = JSON.parse(body);
-            return callback(null, data, profile_url);
+            return callback(null, data, images);
         } else {
             if (response.statusCode != 200) {
                 console.log(body);
@@ -144,7 +144,7 @@ function verifyAccessToken(token, profile_url, callback) {
 
 }
 
-function updateUser(data, profile_url, callback) {
+function updateUser(data, images, callback) {
 
     var params = {
         TableName: user_table,
@@ -156,7 +156,7 @@ function updateUser(data, profile_url, callback) {
             "#profile_pic" : "profile_pic"
         },
         ExpressionAttributeValues:{
-            ":profile_pic" : profile_url
+            ":profile_pic" : images[0]
         },
         ReturnValues:"ALL_NEW"
     };
@@ -166,25 +166,27 @@ function updateUser(data, profile_url, callback) {
         if (err) {
             return callback(err);
         } else {
-            return callback(null, data.Attributes, profile_url);
+            return callback(null, data.Attributes, images);
         }
     });
 
 }
  
-function updateCreator(user, profile_url, callback) {
+function updateCreator(user, images, callback) {
 
     var params = {
         TableName: creator_table,
         Key:{
             "creator_id": user.creator_id
         },
-        UpdateExpression: "set #profile_pic = :profile_pic",
+        UpdateExpression: "set #profile_pic = :profile_pic, #images = :images",
         ExpressionAttributeNames:{
-            "#profile_pic" : "profile_pic"
+            "#profile_pic" : "profile_pic",
+            "#images" : "images"
         },
         ExpressionAttributeValues:{
-            ":profile_pic" : profile_url
+            ":profile_pic" : images[0],
+            ":images" : images
         },
         ReturnValues:"ALL_NEW"
     };
@@ -194,7 +196,7 @@ function updateCreator(user, profile_url, callback) {
         if (err) {
             return callback(err);
         } else {
-            return callback(null, profile_url);
+            return callback(null, images);
         }
     });
 }

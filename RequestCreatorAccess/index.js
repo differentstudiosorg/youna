@@ -112,7 +112,8 @@ exports.handler = function(event, context, callback) {
                 makeCreator,
                 signUserUpIfNecessary, 
                 updateUserIfNecessary,
-                makeCreatorDetails
+                makeCreatorDetails,
+                sendEmail
             ], function(err, done) {
                 if (err) {
                     return callback(err);
@@ -143,7 +144,6 @@ function verifyAccessToken(token, statistics, callback) {
             return callback(null, data, statistics);
         } else {
             if (response.statusCode != 200) {
-                console.log(body);
                 var error = new Error(body);
                 return callback(error);
             }
@@ -162,8 +162,6 @@ function ifUserExistsReturnInfo(data, statistics, callback) {
         TableName : user_table,
         Key : { "google_id" : google_id }
     }
-    console.log(params);
-    console.log(data, "user");
 
     docClient.get(params, function(err, user_item) {
         if (err) {
@@ -189,6 +187,8 @@ function ifUserExistsReturnInfo(data, statistics, callback) {
 }
 
 function makeCreator(data, hasUser, statistics, callback){
+    var images = [];
+    images.push(data.picture);
 
     var creator = {
 
@@ -198,16 +198,19 @@ function makeCreator(data, hasUser, statistics, callback){
         'email' : data.email, 
         'tag_line' : "Ask me questions!",
         'profile_pic' : data.picture,
-        'price' : "10.00",
+        'price' : "Free",
         'rating' : -1,
         'is_approved_creator' : 0,
         'num_ratings' : 0,
         'can_accept' : 0,
-        'reviews' : []
-
+        'reviews' : [],
+        'images' : images,
+        'instagram_link' : 'none',
+        'twitter_link' : 'none', 
+        'facebook_link' : 'none', 
+        'youtube_link' : 'none'
     };
 
-    console.log(1);
     var params = {
         TableName : creator_table, 
         Item : creator
@@ -267,7 +270,7 @@ function signUserUpIfNecessary(data, shouldSignUp, creator_id, statistics, callb
                         return callback(err);
                     } else {
                         var shouldUpdate = false; 
-                        return callback(null, data.id, shouldUpdate, creator_id, statistics, email);
+                        return callback(null, data.id, shouldUpdate, creator_id, statistics, data.email);
                     }
                 });
             }
@@ -343,14 +346,14 @@ function makeCreatorDetails(creator_id, google_id, statistics, email, callback) 
 }
 
 function sendEmail(creator_details, email, callback) {
-    var ses = new AWS.SES({
+    var ses = new aws.SES({
         apiVersion: '2010-12-01'
     });
 
-    var email_text = '<body><h2>Welcome!</h2><h5> Thank you for signing up to use You&A!</h5></body>';
+    var email_text = '<body><h3>Welcome!</h3><h5> Thank you for using our app! We will get back to you shortly about your Expert account. </h5>  - Mehul </body>';
 
     ses.sendEmail({
-        Source: 'Mehul Patel (mehul@youna.io)',
+        Source: 'Mehul Patel <mehul@youna.io>',
         Destination: {
             ToAddresses: [email]
         },
@@ -364,7 +367,7 @@ function sendEmail(creator_details, email, callback) {
                 }
             },
             Subject: {
-                Data: 'Confirmation'
+                Data: 'Account Confirmation Email - You&A'
             }
         }
 
@@ -374,6 +377,5 @@ function sendEmail(creator_details, email, callback) {
         } else {
             callback(null, creator_details);
         }
-
     });
 }

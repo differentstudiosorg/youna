@@ -20,6 +20,11 @@ var CONFIG_TABLE = 'lambda_config';
 var STAGES = ['prod', 'devo', 'test'];
 var CREATOR_ID_PREFIX = "_c";
 
+var FACEBOOK_LINK = "facebook_link";
+var TWITTER_LINK = "twitter_link";
+var INSTAGRAM_LINK = "instagram_link";
+var YOUTUBE_LINK = "youtube_link";
+
 function genRand() {
     return Math.floor(Math.random()*89999+10000);
 }
@@ -93,7 +98,11 @@ exports.handler = function(event, context, callback) {
             var access_token = event.body.token;
             var email = event.body.email;
             var tag_line = event.body.tag_line;
-
+            var links = {};
+            links[FACEBOOK_LINK] = event.body[FACEBOOK_LINK];
+            links[TWITTER_LINK] = (event.body[TWITTER_LINK] === "none") ? event.body[TWITTER_LINK] : "https://www.twitter.com/" + event.body[TWITTER_LINK];
+            links[INSTAGRAM_LINK] = (event.body[INSTAGRAM_LINK] === "none") ? event.body[INSTAGRAM_LINK] : "https://www.instagram.com/" + event.body[INSTAGRAM_LINK];
+            links[YOUTUBE_LINK] = (event.body[YOUTUBE_LINK] === "none") ? event.body[YOUTUBE_LINK] : "https://www.youtube.com/user/" + event.body[YOUTUBE_LINK];
             if (access_token === undefined || access_token === null || access_token === '') {
                 var error = new Error("Token is either null or undefined");
                 return callback(error);
@@ -110,7 +119,7 @@ exports.handler = function(event, context, callback) {
             }
 
             async.waterfall([
-                async.apply(verifyAccessToken, access_token, email, tag_line),
+                async.apply(verifyAccessToken, access_token, email, tag_line, links),
                 getUser,
                 updateCreator,
                 updateCreatorDetails
@@ -134,13 +143,13 @@ exports.handler = function(event, context, callback) {
 
 }
 
-function verifyAccessToken(token, email, tag_line, callback) {
+function verifyAccessToken(token, email, tag_line, links, callback) {
 
     var url = 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=' + token;
     request(url, function(error, response, body){
         if (!error && response.statusCode === 200) {
             var data = JSON.parse(body);
-            return callback(null, data, email, tag_line);
+            return callback(null, data, email, tag_line, links);
         } else {
             if (response.statusCode != 200 && error === null) {
                 var error = new Error("Invalid token");
@@ -152,7 +161,7 @@ function verifyAccessToken(token, email, tag_line, callback) {
 
 }
 
-function getUser(data, email, tag_line, callback) {
+function getUser(data, email, tag_line, links, callback) {
 
     console.log(data, email, tag_line, callback);
     var google_id = data.id; 
@@ -172,29 +181,35 @@ function getUser(data, email, tag_line, callback) {
                 var error = new Error("Couldn't find user");
                 return callback(error);
             } else {
-                return callback(null, email, tag_line, user['creator_id']);
+                return callback(null, email, tag_line, user['creator_id'], links);
             }
         }
     });
 }
 
-function updateCreator(email, tag_line, creator_id, callback) {
+function updateCreator(email, tag_line, creator_id, links, callback) {
     var params = {
         TableName: creator_table,
         Key:{
             "creator_id": creator_id
         },
-        UpdateExpression: "set #tag_line = :tag_line",
+        UpdateExpression: "set #tag_line = :tag_line, #instagram_link = :instagram_link, #facebook_link = :facebook_link, #twitter_link = :twitter_link, #youtube_link = :youtube_link",
         ExpressionAttributeNames:{
-            "#tag_line" : "tag_line"
+            "#tag_line" : "tag_line",
+            "#facebook_link" : "facebook_link",
+            "#instagram_link" : "instagram_link",
+            "#twitter_link" : "twitter_link",
+            "#youtube_link" : "youtube_link"
         },
         ExpressionAttributeValues:{
-            ":tag_line" : tag_line
+            ":tag_line" : tag_line,
+            ":facebook_link" : links.facebook_link,
+            ":instagram_link" : links.instagram_link,
+            ":twitter_link" : links.twitter_link,
+            ":youtube_link" : links.youtube_link
         },
         ReturnValues:"ALL_NEW"
     };
-
-    console.log(params, "1");
 
     docClient.update(params, function(err, data) {
         if (err) {
