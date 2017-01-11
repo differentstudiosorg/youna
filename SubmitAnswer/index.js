@@ -473,7 +473,8 @@ function notify(params, callback) {
 
                 }, function(err,data) {
                     if (err) {
-                        return callback(err);
+                        console.log(err, user);
+                        return callback(null, params);
                     } else {
                         return callback(null, params);
                     }
