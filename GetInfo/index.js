@@ -79,6 +79,42 @@ function parseQuestionsAndAnswers(user) {
     return user;
 }
 
+//very inefficient since it's copying the previous function
+function parseQuestionsAndAnswersFeed(user) {
+    var videos = [];
+    //only get answered questions
+    if (user.questions != undefined) {
+        for (var i = 0; i < user.questions.length; i++) {
+            var video = {
+                question : user.questions[i]
+            };
+            var question_id = user.questions[i].question_id;
+            if (user.answers != undefined) {
+                for  (var j = 0; j < user.answers.length; j++) {
+                    if (user.answers[j].question_id === question_id)  {
+                        video.answer = user.answers[j];
+                        videos.push(video);
+                    }
+                }
+            }
+            
+        }
+    }
+
+    videos.sort(function(video1, video2) {
+        function parseDate(str) {
+            var parts = str.match(/(\d+)/g);
+            return new Date(parts[2], parts[0]-1, parts[1]);
+        }
+        var diff = parseDate(video1.question.creation_date) - parseDate(video2.question.creation_date);
+        if (diff > 0) return -1;
+        else return 1; 
+    });
+
+    user.feed = videos;
+    return user;
+}
+
 function getStage(invokedFunctionArn) {
 
      var invokedFunctionArnArray = invokedFunctionArn.split(":");
@@ -136,7 +172,9 @@ exports.handler = function(event, context, callback) {
                 signUserUpIfNecessary,
                 getAnswers,
                 getQuestions,
-                getAllCreators
+                getAllCreators,
+                getAllAnswers,
+                getAllQuestions
             ], function(err, done) {
                 if (err) {
                     return callback(err);
@@ -144,9 +182,13 @@ exports.handler = function(event, context, callback) {
                     done.user = parseQuestionsAndAnswers(done.user);
                     done.user = setNotificationNumber(done.user);
                     done.creators = removeCreatorEmails(done.creators);
+                    done = parseQuestionsAndAnswersFeed(done);
                     delete done.user.answers;
                     delete done.user.questions;
                     delete done.user.customer_id;
+                    delete done.questions;
+                    delete done.answers;
+
                     return callback(null, done);
                 }
             });
@@ -373,7 +415,6 @@ function getQuestions(user, isNewUser, callback){
 
 }
 
-
 function getAllCreators(user, callback) {
 
     var params = {
@@ -399,3 +440,32 @@ function getAllCreators(user, callback) {
     });
 }
 
+function getAllAnswers(response, callback) {
+    var params = {
+        TableName: answer_table
+    };
+
+    docClient.scan(params, function(err, data) {
+        if (err) {
+            return callback(err)
+        } else {
+            response.answers = data.Items;
+            return callback(null, response);
+        }
+    });
+}
+
+function getAllQuestions(response, callback) {
+    var params = {
+        TableName: question_table
+    };
+
+    docClient.scan(params, function(err, data) {
+        if (err) {
+            return callback(err)
+        } else {
+            response.questions = data.Items
+            return callback(null, response);
+        }
+    });
+}
