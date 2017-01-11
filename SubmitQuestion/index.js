@@ -105,15 +105,35 @@ exports.handler = function(event, context, callback) {
             var asker_id = event.body.asker_id;
             var answerer_id = event.body.answerer_id;
             var stripe_token = event.body.stripe_token;
+            var type = event.body.type;
+            var question_text = event.body.question_text;
+
 
             if (token === undefined || token === null || token === '') {
                 var error = new Error("Token is either null or undefined");
                 return callback(error);
             }
 
-            if (filename === undefined || filename === null || filename === '') {
-                var error = new Error("filename is either null or undefined");
+            if (type === undefined || type === null || type === '') {
+                var error = new Error("type is either null or undefined");
                 return callback(error);
+            }
+
+            if (type != "text" && type != "video") {
+                var error = new Error("type is invalid");
+                return callback(error);
+            }
+
+            if (question_text === undefined || question_text === null || question_text === '') {
+                var error = new Error("question_text is either null or undefined or invalid");
+                return callback(error);
+            }
+
+            if (type === "video"){
+                if (filename === undefined || filename === null || filename === '') {
+                    var error = new Error("filename is either null or undefined");
+                    return callback(error);
+                }
             }
 
             if (asker_id === undefined || asker_id === null || asker_id === '') {
@@ -136,7 +156,9 @@ exports.handler = function(event, context, callback) {
                 asker_user_id : asker_id, 
                 filename : filename, 
                 creator_id : answerer_id,
-                stripe_token : stripe_token
+                stripe_token : stripe_token, 
+                question_text : question_text,
+                type : type
             }
 
             async.waterfall([
@@ -200,6 +222,7 @@ function verifyAskerUserId (params, callback) {
                 var asker_apns_token = user['asker_apns_token'];
                 params.asker_apns_token = asker_apns_token;
                 params.asker_name = user['name'];
+                params.asker_profile_pic = user['profile_pic']
                 params.customer_id = user['customer_id'];
                 return callback(null, params);
             } else {
@@ -231,6 +254,7 @@ function getAnswerer(params, callback ) {
                     params.price = price;
                     params.answerer_google_id = answerer_google_id;
                     params.answerer_name = creator['name'];
+                    params.answerer_profile_pic = creator['profile_pic'];
                     return callback(null, params);
 
             } else {
@@ -335,13 +359,20 @@ function makeQuestion(params, callback) {
         question_id : generateUniqueId(),
         asker_id : params.asker_user_id,
         answerer_id : params.creator_id, 
-        thumbnail : generateThumbnailName(params.filename),
-        filename : params.filename, 
+        type: params.type,
+        asker_profile_pic : params.asker_profile_pic, 
+        answerer_profile_pic : params.answerer_profile_pic,
         creation_date : getDateTime(),
         status : "pending", 
         price : params.price,
         asker_name : params.asker_name, 
-        answerer_name : params.answerer_name
+        answerer_name : params.answerer_name,
+        question_text : params.question_text
+    }
+
+    if (params.type === "video")  {
+        question.filename = params.filename;
+        question.thumbnail = generateThumbnailName(params.filename);
     }
 
     var parameters = {
@@ -448,7 +479,8 @@ function notify(params, callback) {
 
                 }, function(err2, data) {
                     if (err2) {
-                        return callback(err);
+                        //even if endpoint is disabled
+                        return callback(null, params);
                     } else {
                         if (params.is_queue_blocked) {
 
