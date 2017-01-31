@@ -85,19 +85,20 @@ function parseQuestionsAndAnswersFeed(user) {
     //only get answered questions
     if (user.questions != undefined) {
         for (var i = 0; i < user.questions.length; i++) {
-            var video = {
-                question : user.questions[i]
-            };
-            var question_id = user.questions[i].question_id;
-            if (user.answers != undefined) {
-                for  (var j = 0; j < user.answers.length; j++) {
-                    if (user.answers[j].question_id === question_id)  {
-                        video.answer = user.answers[j];
-                        videos.push(video);
+            if (user.questions[i].price === 'Free') {
+                var video = {
+                    question : user.questions[i]
+                };
+                var question_id = user.questions[i].question_id;
+                if (user.answers != undefined) {
+                    for  (var j = 0; j < user.answers.length; j++) {
+                        if (user.answers[j].question_id === question_id)  {
+                            video.answer = user.answers[j];
+                            videos.push(video);
+                        }
                     }
                 }
             }
-            
         }
     }
 

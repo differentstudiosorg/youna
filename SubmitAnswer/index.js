@@ -57,6 +57,12 @@ function getDateTime() {
 
 }
 
+function getFormattedDateTime() {
+    var d = new Date();
+    d = d.getFullYear() + "-" + ('0' + (d.getMonth() + 1)).slice(-2) + "-" + ('0' + d.getDate()).slice(-2) + " " + ('0' + d.getHours()).slice(-2) + ":" + ('0' + d.getMinutes()).slice(-2) + ":" + ('0' + d.getSeconds()).slice(-2);
+    return d;
+}
+
 function loadConfig(ddbtable, stage_value, context, callback) {
 
     var params = {
@@ -149,8 +155,8 @@ exports.handler = function(event, context, callback) {
                 async.apply(verifyToken, info),
                 verifyAnswerer,
                 getAnswererDetails,
-                makeAnswer,
                 getQuestion,
+                makeAnswer,
                 updateQuestion,
                 updateAnswerer, 
                 notify
@@ -247,37 +253,6 @@ function getAnswererDetails(info, callback) {
 
 }
 
-function makeAnswer(info, callback) {
-
-    var answer = {
-        answer_id : generateUniqueId(),
-        question_id : info.question_id,
-        asker_id : info.asker_user_id,
-        answerer_id : info.creator_id,
-        filename : info.filename, 
-        thumbnail : generateThumbnailName(info.filename),
-        creation_date : getDateTime(),
-        asker_name : info.asker_name, 
-        answerer_name : info.answerer_name, 
-        rating : -1
-    }
-
-    var params = {
-        TableName : answer_table, 
-        Item : answer
-    }
-
-    docClient.put(params, function(err) {
-        if (err) {
-            return callback(err);
-        } else {
-            info.answer = answer;
-            return callback(null, info);
-        }
-    });
-
-}
-
 function getQuestion(info, callback) {
 
     var params = {
@@ -300,6 +275,41 @@ function getQuestion(info, callback) {
             }
         }
     });
+}
+
+function makeAnswer(info, callback) {
+    var d = new Date();
+    var answer = {
+        answer_id : generateUniqueId(),
+        question_id : info.question_id,
+        asker_id : info.asker_user_id,
+        answerer_id : info.creator_id,
+        filename : info.filename, 
+        thumbnail : generateThumbnailName(info.filename),
+        creation_date : getDateTime(),
+        unformatted_date : d.toString(),
+        formatted_date : getFormattedDateTime(),
+        asker_name : info.asker_name, 
+        answerer_name : info.answerer_name,
+        likes: 0,
+        rating : -1,
+        price : info.question.price
+    }
+
+    var params = {
+        TableName : answer_table, 
+        Item : answer
+    }
+
+    docClient.put(params, function(err) {
+        if (err) {
+            return callback(err);
+        } else {
+            info.answer = answer;
+            return callback(null, info);
+        }
+    });
+
 }
 
 function updateQuestion(info, callback) {

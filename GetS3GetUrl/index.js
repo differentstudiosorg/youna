@@ -120,6 +120,7 @@ exports.handler = function(event, context, callback) {
             user_table = env_config["Item"][USERS_DYNAMODB_TABLE]["S"];
             google_client_id = env_config["Item"][GOOGLE_CLIENT_ID]["S"];
 
+            console.log(video_id, type);
 
             async.waterfall([
                 async.apply(verifyToken, token, video_id, isThumbnail),
@@ -197,12 +198,18 @@ function checkIfUserCanAccessVideo(video_id, user_id, creator_id, isThumbnail, c
         } else {
             var obj = video_item['Item'];
             if (obj != undefined && obj[video_id_string] != undefined) {
-                if (obj['asker_id'] === user_id || obj['answerer_id'] === creator_id) {
+                //NEED TO FIX THIS - any answer can be viewed right now
+                if (obj['price'] === 'Free' || video_table === "answers") {
                     var file = (isThumbnail) ? 'thumbnail' : 'filename';
-                    return callback(null, obj[file]);
+                    return  callback(null, obj[file]);
                 } else {
-                    var error = new Error("The user doesn't have access to this video/thumbanil");
-                    return callback(error);
+                    if (obj['asker_id'] === user_id || obj['answerer_id'] === creator_id) {
+                        var file = (isThumbnail) ? 'thumbnail' : 'filename';
+                        return callback(null, obj[file]);
+                    } else {
+                        var error = new Error("The user doesn't have access to this video/thumbanil");
+                        return callback(error);
+                    }
                 }
             }
             else {

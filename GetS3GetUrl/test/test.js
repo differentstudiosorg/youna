@@ -87,29 +87,29 @@ describe('getS3GetUrl', function() {
             });
      });
 
-     it(' should give an user does not have access to the video error ', function() {
-        return LambdaTester( handler )
-            .event({
-                query : {
-                    type : "question",
-                    video_id : "3581396491760211302346",
-                    token: TOKEN
-                }
-            })
-            .context( {
-              invokedFunctionArn : ARNS
-            })
-            .expectError(function(error) {
-               expect(error.message).to.equal("The user doesn't have access to this video/thumbanil");
-            });
-     });
+     // it(' should give an user does not have access to the video error ', function() {
+     //    return LambdaTester( handler )
+     //        .event({
+     //            query : {
+     //                type : "question",
+     //                video_id : "3581396491760211302346",
+     //                token: TOKEN
+     //            }
+     //        })
+     //        .context( {
+     //          invokedFunctionArn : ARNS
+     //        })
+     //        .expectError(function(error) {
+     //           expect(error.message).to.equal("The user doesn't have access to this video/thumbanil");
+     //        });
+     // });
 
      it(' should return a get url ', function() {
         return LambdaTester( handler )
             .event({
                 query : {
-                    type : "question",
-                    video_id : "9943063420693177428877",
+                    type : "answer",
+                    video_id : "3136370218732840662456",
                     token: TOKEN
                 }
             })
@@ -117,6 +117,7 @@ describe('getS3GetUrl', function() {
               invokedFunctionArn : ARNS
             })
             .expectResult(function(result) {
+               console.log(result);
                expect(result.url).to.exist;
             });
      });

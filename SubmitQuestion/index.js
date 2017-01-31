@@ -52,6 +52,12 @@ function getDateTime() {
 
 }
 
+function getFormattedDateTime() {
+    var d = new Date();
+    d = d.getFullYear() + "-" + ('0' + (d.getMonth() + 1)).slice(-2) + "-" + ('0' + d.getDate()).slice(-2) + " " + ('0' + d.getHours()).slice(-2) + ":" + ('0' + d.getMinutes()).slice(-2) + ":" + ('0' + d.getSeconds()).slice(-2);
+    return d;
+}
+
 function loadConfig(ddbtable, stage_value, context, callback) {
 
     var params = {
@@ -354,7 +360,7 @@ function getAnswererDetails(params, callback) {
 
 
 function makeQuestion(params, callback) {
-
+    var d = new Date();
     var question = {
         question_id : generateUniqueId(),
         asker_id : params.asker_user_id,
@@ -363,6 +369,8 @@ function makeQuestion(params, callback) {
         asker_profile_pic : params.asker_profile_pic, 
         answerer_profile_pic : params.answerer_profile_pic,
         creation_date : getDateTime(),
+        unformatted_date : d.toString(),
+        formatted_date : getFormattedDateTime(),
         status : "pending", 
         price : params.price,
         asker_name : params.asker_name, 
