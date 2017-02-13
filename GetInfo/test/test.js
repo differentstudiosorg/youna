@@ -44,6 +44,7 @@ describe('getInfo', function() {
               invokedFunctionArn : ARNS
             })
             .expectResult(function(result) {
+                console.log(result.feed, result.feed.length);
                 expect( result.user ).to.exist;
                 expect( result.creators ).to.exist;
             });

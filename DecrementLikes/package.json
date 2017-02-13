@@ -1,0 +1,22 @@
+{
+  "name": "SubmitAnswer",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node index.js",
+    "test" : "mocha"
+  },
+  "dependencies": {
+    "async" : "2.0.1",
+    "google-id-token-verifier" : "0.2.3",
+    "aws-sdk" : "2.6.6",
+    "money-math" : "2.4.3"
+  },
+  "devDependencies" : {
+    "mocha": "*",
+    "assert": "*",
+    "chai": "*",
+    "chai-http": "*",
+    "lambda-tester" : "2.6.0"
+  }
+}

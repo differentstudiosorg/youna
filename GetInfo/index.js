@@ -79,6 +79,26 @@ function parseQuestionsAndAnswers(user) {
     return user;
 }
 
+//inefficient for now
+function shuffle(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex;
+
+  // While there remain elements to shuffle...
+  while (0 !== currentIndex) {
+
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
+}
+
 //very inefficient since it's copying the previous function
 function parseQuestionsAndAnswersFeed(user) {
     var videos = [];
@@ -86,6 +106,13 @@ function parseQuestionsAndAnswersFeed(user) {
     if (user.questions != undefined) {
         for (var i = 0; i < user.questions.length; i++) {
             if (user.questions[i].price === 'Free') {
+                var asker_name = user.questions[i].asker_name;
+                if (asker_name != undefined) {
+                    var asker_name_split = asker_name.split(" ");
+                    if (asker_name_split.length === 2) {
+                        user.questions[i].asker_name = asker_name_split[0] + " " + asker_name_split[1][0];
+                    }
+                }
                 var video = {
                     question : user.questions[i]
                 };
@@ -112,7 +139,7 @@ function parseQuestionsAndAnswersFeed(user) {
         else return 1; 
     });
 
-    user.feed = videos;
+    user.feed = shuffle(videos);
     return user;
 }
 
